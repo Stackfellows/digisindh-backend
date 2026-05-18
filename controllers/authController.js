@@ -8,6 +8,7 @@ const getEmailVerificationHtml = require("../emailTemplates/getEmailVerification
 const getUserLoginEmailHtml = require("../emailTemplates/getUserLoginEmailHtml");
 const getEmailVerifiedHtml = require("../emailTemplates/getEmailVerifiedHtml");
 const getForgotPasswordEmailHtml = require("../emailTemplates/getForgotPasswordEmailHtml");
+const getWelcomeEmailHtml = require("../emailTemplates/getWelcomeEmailHtml");
 const getPasswordChangedEmailHtml = require("../emailTemplates/getPasswordChangedEmailHtml");
 
 // Signup function
@@ -170,39 +171,19 @@ exports.signup = async (req, res) => {
 
     await user.save();
 
-    // Send verification email
-    // const verifyUrl = `${req.protocol}://${req.get(
-    //   "host"
-    // )}/api/auth/verify-email?token=${verifyToken}`;
-    // const html = getEmailVerificationHtml({
-    //   userName: user.fullName,
-    //   verifyLink: verifyUrl,
-    // });
+    // Send Welcome Email
+    const welcomeHtml = getWelcomeEmailHtml({
+      userName: user.fullName,
+      rollNumber: user.rollNumber,
+      loginUrl: "https://hunarmandpunjab.org.pk/login",
+    });
 
-    // const emailResult = await sendEmail({
-    //   email: user.email,
-    //   subject: "Email Verification",
-    //   html: html,
-    //   emailType: 'verification',
-    // });
-
-    // console.log(verifyUrl);
-
-    // if (!emailResult.success) {
-    //   // User created but email failed - still return success but with warning
-    //   return res.status(201).json({
-    //     message: "User created successfully, but verification email could not be sent. Please contact support.",
-    //     emailSent: false,
-    //     emailError: emailResult.error,
-    //     user: {
-    //       rollNumber: user.rollNumber,
-    //       email: user.email,
-    //       fullName: user.fullName,
-    //       courses: user.courses,
-    //       referralCode: user.referralCode,
-    //     },
-    //   });
-    // }
+    await sendEmail({
+      email: user.email,
+      subject: "Welcome to Sindhrozgar - Registration Successful",
+      html: welcomeHtml,
+      emailType: 'admissions',
+    });
 
     res.status(201).json({
       message: "User created successfully. You can login now.",

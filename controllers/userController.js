@@ -5,6 +5,7 @@ const fs = require("fs");
 const Challan = require("../models/Challan");
 const Scholarship = require("../models/Scholarship");
 const getTestPassedEmailHtml = require("../emailTemplates/getTestPassedEmailHtml");
+const getTestFailedEmailHtml = require("../emailTemplates/getTestFailedEmailHtml");
 const getChallanEmailHtml = require("../emailTemplates/getChallanEmailHtml");
 
 exports.generateAndSendPDF = async (req, res) => {
@@ -148,6 +149,8 @@ exports.updateTestScore = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    console.log(`Test score updated for user ${user._id}: Score=${testScore}, Passed=${testPassed}`);
+
     if (!updatedUser) {
       return res.status(404).json({
         status: "error",
@@ -222,6 +225,31 @@ exports.updateTestScore = async (req, res) => {
       return res.status(200).json({
         status: "success",
         message: "Test score updated and challan generated successfully",
+        data: {
+          testScore: updatedUser.testScore,
+          testPassed: updatedUser.testPassed,
+        },
+      });
+    }
+
+    // If user failed the test, send a failure email
+    if (updatedUser.testPassed === false) {
+      const testFailedHtml = getTestFailedEmailHtml({
+        userName: updatedUser.fullName,
+        testScore: updatedUser.testScore,
+        rollNumber: updatedUser.rollNumber,
+      });
+
+      await sendEmail({
+        email: updatedUser.email,
+        subject: "Admission Assessment Results - Sindhrozgar",
+        html: testFailedHtml,
+        emailType: "admissions",
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Test score updated. Unfortunately, you did not pass this time.",
         data: {
           testScore: updatedUser.testScore,
           testPassed: updatedUser.testPassed,
